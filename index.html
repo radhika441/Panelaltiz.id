@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PANELALTIZ</title>
+
+<style>
+*{box-sizing:border-box;font-family:Arial}
+body{
+margin:0;
+background:#0b1220;
+color:#fff;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+overflow:hidden;
+}
+
+/* BOX */
+.box{
+background:#111827;
+width:370px;
+border-radius:18px;
+padding:25px;
+box-shadow:0 0 30px rgba(0,0,0,.7);
+position:fixed;
+top:100px;
+left:50%;
+transform:translateX(-50%);
+transition:.3s;
+}
+
+/* VIP GLOW */
+.vipActive{box-shadow:0 0 25px gold}
+
+/* GET VIP BUTTON */
+#getVipBtn{
+position:absolute;
+left:10px;
+top:10px;
+font-size:11px;
+padding:4px 8px;
+background:#f59e0b;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+/* FPS */
+#fps{
+position:absolute;
+right:10px;
+top:10px;
+font-size:12px;
+}
+
+h2{text-align:center;margin:0 0 15px}
+
+.row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin:7px 0;
+}
+
+.toggle{
+width:44px;height:22px;
+background:#333;border-radius:20px;
+position:relative;cursor:pointer;
+}
+.toggle:before{
+content:"";
+position:absolute;
+width:18px;height:18px;
+background:#fff;border-radius:50%;
+top:2px;left:2px;
+transition:.3s;
+}
+.toggle.active{background:#22c55e}
+.toggle.active:before{left:24px}
+
+.slider{width:100%}
+.footer{text-align:center;font-size:12px;color:#aaa;margin-top:12px}
+.hidden{display:none}
+input{width:100%;padding:10px;margin:8px 0;border:none;border-radius:8px}
+button.main{width:100%;padding:10px;border:none;border-radius:8px;background:#2563eb;color:#fff;cursor:pointer}
+
+/* COUNTDOWN */
+#vipTimer{
+position:fixed;
+right:10px;
+top:10px;
+background:#111;
+padding:8px 12px;
+border-radius:8px;
+font-size:12px;
+display:none;
+box-shadow:0 0 15px gold;
+}
+
+/* BADGE */
+#vipBadge{
+text-align:center;
+color:gold;
+font-size:12px;
+margin-bottom:5px;
+display:none;
+}
+
+/* OVERLAY */
+#overlay{
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:rgba(0,0,0,.7);
+display:none;
+justify-content:center;
+align-items:center;
+}
+
+#vipPopup{
+background:#111827;
+padding:25px;
+border-radius:15px;
+text-align:center;
+width:300px;
+}
+
+#vipPopup button{
+margin-top:10px;
+padding:8px 12px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+.green{background:#22c55e;color:#fff}
+.red{background:#ef4444;color:#fff}
+</style>
+</head>
+<body>
+
+<div id="vipTimer"></div>
+
+<!-- OVERLAY VIP -->
+<div id="overlay">
+<div id="vipPopup">
+<h3>GET VIP</h3>
+<p>Silahkan hubungi nomor berikut:</p>
+<b style="font-size:18px">852-4255-5166</b>
+<br>
+<button class="green" onclick="requestVip()">Kirim Request</button>
+<button class="red" onclick="closeOverlay()">Tutup</button>
+</div>
+</div>
+
+<!-- VERIFY -->
+<div class="box" id="verifyBox">
+<h2>Verifikasi ID</h2>
+<input id="playerId" placeholder="Masukkan ID Player">
+<button class="main" onclick="verifikasi()">Verifikasi</button>
+</div>
+
+<!-- PASSWORD -->
+<div class="box hidden" id="passBox">
+<h2>Password Panel</h2>
+<input type="password" id="panelPass" placeholder="Masukkan Password">
+<button class="main" onclick="login()">Masuk</button>
+</div>
+
+<!-- PANEL -->
+<div class="box hidden" id="panelBox">
+
+<button id="getVipBtn" onclick="showOverlay()">GET VIP</button>
+<div id="fps">FPS: 19</div>
+
+<h2>PANELALTIZ</h2>
+
+<div id="vipBadge">★ VIP ACTIVE ★</div>
+
+<div class="row"><span>Required Rank Bronze:</span><span>✔️</span></div>
+<div class="row"><span>Status:</span><span>✔️</span></div>
+<div class="row"><span>ID:</span><span id="showId"></span></div>
+
+<hr>
+
+<div class="row"><span>Mode Alpha</span><div class="toggle" onclick="toggle(this)"></div></div>
+<div class="row"><span>Mode Beta</span><div class="toggle" onclick="toggle(this)"></div></div>
+<div class="row"><span>Target Assist</span><div class="toggle vipOnly" onclick="vipToggle(this)"></div></div>
+<div class="row"><span>Precision Lock</span><div class="toggle vipOnly" onclick=vipToggle(this)></div></div>
+<div>
+  <span>Bypass</span>
+
+  <button id="vipBypassBtn"
+  style="margin-left:10px;
+         padding:6px 14px;
+         border:none;
+         border-radius:6px;
+         background:#444;
+         color:white;
+         cursor:pointer;">
+    OFF
+  </button>
+</div>
+
+  
+<br>
+<label>Kelicinan: <span id="smoothVal">50</span></label>
+<input type="range" min="1" max="100" value="50"
+class="slider" oninput="smoothVal.innerText=this.value">
+
+<div class="footer">By: ALTIZENPRO</div>
+</div>
+
+<script>
+let vipEnd=null;
+
+/* VERIFY */
+function verifikasi(){
+if(playerId.value.length<5)return alert("ID tidak valid");
+localStorage.setItem("playerId",playerId.value);
+verifyBox.classList.add("hidden");
+passBox.classList.remove("hidden");
+}
+
+/* LOGIN */
+function login(){
+if(panelPass.value==="PANELALTZ"){
+passBox.classList.add("hidden");
+panelBox.classList.remove("hidden");
+showId.innerText=localStorage.getItem("playerId");
+
+startVipListener(); // WAJIB
+
+}else alert("Password salah");
+}
+
+/* TOGGLE */
+function toggle(el){el.classList.toggle("active");}
+function vipToggle(el){
+if(!vipEnd||Date.now()>vipEnd){alert("Harus VIP");return;}
+el.classList.toggle("active");
+}
+
+/* FPS */
+setInterval(()=>{fps.innerText="FPS: "+(Math.random()>0.5?19:20)},1000);
+
+/* OVERLAY */
+function showOverlay(){overlay.style.display="flex";}
+function closeOverlay(){overlay.style.display="none";}
+function openVipPage(){window.open("vip.html","_blank");}
+
+/* AUTO SYNC VIP */
+setInterval(()=>{
+let stored=localStorage.getItem("vipEnd");
+if(stored){
+vipEnd=parseInt(stored);
+if(Date.now()<vipEnd){
+panelBox.classList.add("vipActive");
+vipTimer.style.display="block";
+vipBadge.style.display="block";
+updateTimer();
+}else{
+vipTimer.style.display="none";
+vipBadge.style.display="none";
+panelBox.classList.remove("vipActive");
+}
+}
+},1000);
+
+function updateTimer(){
+let diff=vipEnd-Date.now();
+if(diff<=0)return;
+let d=Math.floor(diff/86400000);
+let h=Math.floor((diff%86400000)/3600000);
+let m=Math.floor((diff%3600000)/60000);
+let s=Math.floor((diff%60000)/1000);
+vipTimer.innerText=`[VIP亗]${d} | ${h} | ${m} | ${s}]`;
+}
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+  const btn = document.getElementById("vipBypassBtn");
+  let status = false;
+
+  btn.addEventListener("click", function(){
+
+    const vipEnd = localStorage.getItem("vipEnd");
+
+    // Kalau belum VIP
+    if(!vipEnd){
+      alert("Harus VIP dulu!");
+      return;
+    }
+
+    // Kalau VIP sudah habis
+    if(Date.now() > parseInt(vipEnd)){
+      alert("VIP sudah habis!");
+      return;
+    }
+
+    // Kalau VIP aktif baru boleh ON
+    status = !status;
+
+    if(status){
+      btn.innerText = "ON";
+      btn.style.background = "#22c55e";
+    } else {
+      btn.innerText = "OFF";
+      btn.style.background = "#444";
+    }
+
+  });
+
+});
+</script>
+<!-- POPUP GET VIP -->
+<div id="vipPopup" style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+z-index:9999;
+align-items:center;
+justify-content:center;
+">
+
+  <div style="
+  background:#1f2937;
+  padding:25px;
+  border-radius:10px;
+  text-align:center;
+  width:280px;
+  color:white;
+  ">
+
+    <h3 style="margin-top:0;">VIP ACCESS</h3>
+
+    <p>Hubungi nomor berikut:</p>
+    <b style="font-size:18px;">852-4255-5166</b>
+
+    <br><br>
+
+    <button onclick="closeVipPopup()" style="
+    padding:6px 15px;
+    border:none;
+    border-radius:6px;
+    background:#ef4444;
+    color:white;
+    cursor:pointer;">
+    Tutup
+    </button>
+
+  </div>
+</div>
+<script>
+function openVipPopup(){
+  document.getElementById("vipPopup").style.display = "flex";
+}
+
+function closeVipPopup(){
+  document.getElementById("vipPopup").style.display = "none";
+}
+</script>
+ <script>
+document.addEventListener("DOMContentLoaded", function(){
+
+  const panel = document.getElementById("panelBox");
+  let isDragging = false;
+  let offsetX, offsetY;
+
+  panel.addEventListener("touchstart", function(e){
+    isDragging = true;
+    offsetX = e.touches[0].clientX - panel.offsetLeft;
+    offsetY = e.touches[0].clientY - panel.offsetTop;
+  });
+
+  document.addEventListener("touchmove", function(e){
+    if(!isDragging) return;
+    panel.style.left = (e.touches[0].clientX - offsetX) + "px";
+    panel.style.top = (e.touches[0].clientY - offsetY) + "px";
+  });
+
+  document.addEventListener("touchend", function(){
+    isDragging = false;
+  });
+
+});
+</script> 
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDWp9zpb16-k0S2uBxzhmOCRUnY496n1lk",
+  authDomain: "panelaltiz.firebaseapp.com",
+  databaseURL: "https://panelaltiz-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "panelaltiz",
+  storageBucket: "panelaltiz.firebasestorage.app",
+  messagingSenderId: "633869528624",
+  appId: "1:633869528624:web:5525d188ac5f87f29b47f5"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+
+
+/* ===============================
+   REQUEST VIP (POPUP 1)
+================================ */
+
+window.requestVip = function(){
+
+  const id = localStorage.getItem("playerId");
+  if(!id){
+    alert("ID tidak ditemukan");
+    return;
+  }
+
+  set(ref(db, "vipRequests/" + id), {
+    status: "pending",
+    time: Date.now()
+  });
+
+  alert("Request VIP terkirim!");
+  closeOverlay();
+};
+
+
+
+/* ===============================
+   LISTEN VIP APPROVAL (POPUP 2)
+================================ */
+
+window.startVipListener = function(){
+
+  const id = localStorage.getItem("playerId");
+  if(!id) return;
+
+  const vipRef = ref(db, "vipUsers/" + id);
+
+  onValue(vipRef, (snapshot) => {
+
+    if(snapshot.exists()){
+
+      const data = snapshot.val();
+
+      localStorage.setItem("vipEnd", data.vipEnd);
+
+      // tampil popup 2
+      document.getElementById("overlayInfo").style.display="flex";
+
+      // hapus request
+      remove(ref(db,"vipRequests/"+id));
+    }
+
+  });
+
+};
+
+</script>
+</body>
+  </html>
